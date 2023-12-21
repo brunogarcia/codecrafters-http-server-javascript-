@@ -9,30 +9,48 @@ const server = net.createServer((socket) => {
   socket.on("data", (data) => {
     // Step 1: Extract the path
     const message = data.toString();
+
     const [method, path] = message.split(" ");
     const [_, echo, ...tail] = path.split("/");
+
+    const requestLines = message.split("\r\n");
+    let userAgentValue = "";
+    for (let line of requestLines) {
+      if (line.startsWith("User-Agent:")) {
+        userAgentValue = line.split(": ")[1];
+      }
+    }
 
     if (method === "GET" && path === "/") {
       socket.write(`HTTP/1.1 200 OK\r\n\r\n`);
     } else if (method === "GET" && echo === "echo" && tail.length > 0) {
-      // Step 2: Create your response
       const randomString = tail.join("/");
       const statusLine = "HTTP/1.1 200 OK\r\n";
       const headers = `Content-Type: text/plain\r\nContent-Length: ${randomString.length}\r\n\r\n`;
       const responseBody = randomString;
       const response = statusLine + headers + responseBody;
 
-      // Step 3: Send the response
+      socket.write(response);
+    } else if (
+      method === "GET" &&
+      echo === "user-agent" &&
+      userAgentValue.length > 0
+    ) {
+      const statusLine = "HTTP/1.1 200 OK\r\n";
+      const headers = `Content-Type: text/plain\r\nContent-Length: ${userAgentValue.length}\r\n\r\n`;
+      const responseBody = userAgentValue;
+      const response = statusLine + headers + responseBody;
+
       socket.write(response);
     } else {
       socket.write(`HTTP/1.1 404 Not Found\r\n\r\n`);
     }
   });
 
-  socket.on("close", () => {
-    socket.end();
-    server.close();
-  });
+  // socket.on("close", () => {
+  //   socket.end();
+  //   server.close();
+  // });
 });
 
 server.listen(4221, "localhost");
