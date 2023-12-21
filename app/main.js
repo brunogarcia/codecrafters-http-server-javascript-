@@ -10,8 +10,8 @@ const server = net.createServer((socket) => {
     // Step 1: Extract the path
     const message = data.toString();
 
-    const [method, path] = message.split(" ");
-    const [_, echo, ...tail] = path.split("/");
+    const [method, pathComplete] = message.split(" ");
+    const [_, pathFirst, ...pathFirstTail] = pathComplete.split("/");
 
     const requestLines = message.split("\r\n");
     let userAgentValue = "";
@@ -21,36 +21,35 @@ const server = net.createServer((socket) => {
       }
     }
 
-    if (method === "GET" && path === "/") {
+    const isGetMethod = method === "GET";
+    const isRootPath = isGetMethod && pathComplete === "/";
+    const isEchoPath = isGetMethod && pathFirst === "echo";
+    const isUserAgentPath = isGetMethod && pathFirst === "user-agent";
+
+    if (isRootPath) {
       socket.write(`HTTP/1.1 200 OK\r\n\r\n`);
-    } else if (method === "GET" && echo === "echo" && tail.length > 0) {
-      const randomString = tail.join("/");
+    } else if (isEchoPath && pathFirstTail.length > 0) {
+      const randomString = pathFirstTail.join("/");
       const statusLine = "HTTP/1.1 200 OK\r\n";
       const headers = `Content-Type: text/plain\r\nContent-Length: ${randomString.length}\r\n\r\n`;
       const responseBody = randomString;
       const response = statusLine + headers + responseBody;
-
       socket.write(response);
-    } else if (
-      method === "GET" &&
-      echo === "user-agent" &&
-      userAgentValue.length > 0
-    ) {
+    } else if (isUserAgentPath && userAgentValue.length > 0) {
       const statusLine = "HTTP/1.1 200 OK\r\n";
       const headers = `Content-Type: text/plain\r\nContent-Length: ${userAgentValue.length}\r\n\r\n`;
       const responseBody = userAgentValue;
       const response = statusLine + headers + responseBody;
-
       socket.write(response);
     } else {
       socket.write(`HTTP/1.1 404 Not Found\r\n\r\n`);
     }
   });
 
-  // socket.on("close", () => {
-  //   socket.end();
-  //   server.close();
-  // });
+  socket.on("close", () => {
+    socket.end();
+    server.close();
+  });
 });
 
 server.listen(4221, "localhost");
