@@ -14,13 +14,11 @@ and more.
 **Note**: If you're viewing this repo on GitHub, head over to
 [codecrafters.io](https://codecrafters.io) to try the challenge.
 
-## Dependencies
-
-This project uses [Bun](https://bun.sh/) to run the application and tests.
-
 ## Testing your code
 
-The next commands will test your code:
+First, [install bun](https://bun.sh/#install).
+
+Then, run `./your_server.sh` to start your server and finally run these curl commands to test your server:
 
 ### Echo server
 
